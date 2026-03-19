@@ -3,74 +3,87 @@
 ## Project Overview
 - **Name**: Peperoncino Pasta Lab
 - **AI**: Sora Lella - Asistente IA personal para Mirko Montani
-- **Version**: 2.0.0
-- **Goal**: CRM inteligente con IA conversacional, generación de imágenes, material publicitario y análisis de documentos
+- **Version**: 3.0.0
+- **Goal**: CRM inteligente con IA conversacional, generacion de imagenes, material publicitario, analisis de documentos y **conversacion por voz con Whisper + TTS**
 
 ## URLs
 - **Production**: https://peperoncino-pasta-lab.pages.dev
 - **GitHub**: https://github.com/Samuelwoody/Peperoncino-
 - **Sandbox**: https://3000-iagd6r0752r1kkif5nj42-cbeee0f9.sandbox.novita.ai
 
-## Features Implementadas (v2.0)
+## Features Implementadas (v3.0)
+
+### NUEVO: Conversacion por Voz (Whisper + TTS)
+- **Boton de microfono** en el chat para grabar mensajes de voz
+- **OpenAI Whisper** (whisper-1): transcripcion de audio a texto en espanol
+- **OpenAI TTS** (tts-1, voz Nova): respuesta de Sora Lella en audio
+- **Flujo completo**: Grabar -> Whisper transcribe -> Sora Lella responde -> TTS genera audio
+- **Boton "Escuchar"** en cada mensaje de Sora Lella (TTS on-demand)
+- **Barra de grabacion** con timer, cancelar, enviar
+- **Formatos soportados**: WebM, OGG, MP4, MP3, WAV, M4A
+- **Prompt optimizado**: Whisper usa contexto de negocio (Peperoncino, ravioles, sorrentinos, etc.)
+- **Limpieza automatica**: TTS remueve markdown, code blocks, CRM actions del texto
 
 ### Chat IA Multi-Modelo
-- **DeepSeek** (`deepseek-chat`): Conversaciones simples, clasificación automática
-- **GPT-4o**: Tareas complejas, análisis visual (Vision), generación de material publicitario
-- **GPT-4o-mini**: Análisis de documentos, optimización de prompts
-- **DALL-E 3**: Generación de imágenes profesionales estilo trattoria italiana
-- Routing inteligente: la IA elige automáticamente el modelo según la complejidad
+- **DeepSeek** (`deepseek-chat`): Conversaciones simples, clasificacion automatica
+- **GPT-4o**: Tareas complejas, analisis visual (Vision), generacion de material publicitario
+- **GPT-4o-mini**: Analisis de documentos, optimizacion de prompts
+- **DALL-E 3**: Generacion de imagenes profesionales estilo trattoria italiana
+- **Whisper-1**: Transcripcion de audio (speech-to-text)
+- **TTS-1**: Sintesis de voz (text-to-speech, voz Nova)
+- Routing inteligente: la IA elige automaticamente el modelo segun la complejidad
 
-### Upload de Imágenes y Documentos
-- Botón de clip (📎) para adjuntar archivos
+### Upload de Imagenes y Documentos
+- Boton de clip para adjuntar archivos
 - Drag & drop directamente en el chat
-- Soporte: imágenes (JPG, PNG, GIF), documentos (PDF, TXT, CSV, DOC)
+- Soporte: imagenes (JPG, PNG, GIF), documentos (PDF, TXT, CSV, DOC)
 - Preview de adjuntos antes de enviar
-- Límite: 10MB por archivo
+- Limite: 10MB por archivo
 
-### Análisis Visual (Vision API)
+### Analisis Visual (Vision API)
 - GPT-4o analiza fotos de platos, productos, etiquetas
 - Extrae datos de facturas, recibos, tickets
 - Compara con competencia
-- Sugiere mejoras de presentación
+- Sugiere mejoras de presentacion
 
-### Generación de Imágenes
+### Generacion de Imagenes
 - DALL-E 3 con prompts optimizados para estilo trattoria italiana
 - Paleta Peperoncino (terracota, verde oliva, crema, rojo profundo)
-- Descarga directa de imágenes generadas
+- Descarga directa de imagenes generadas
 
 ### Material Publicitario
-- **Menús** personalizados para restaurantes (HTML, estilo trattoria)
+- **Menus** personalizados para restaurantes (HTML, estilo trattoria)
 - **Tarjetas de plato estrella** para insertar en cartas
 - **Posts para Instagram/Facebook** con hashtags
 - **Flyers** para WhatsApp y para imprimir
 - **Etiquetas de producto** con branding
 - **Banners** para ferias y eventos
-- **Tarjetas de presentación** del negocio
-- **Infografías** y **Catálogos** de precios
+- **Tarjetas de presentacion** del negocio
+- **Infografias** y **Catalogos** de precios
 - Vista previa y descarga HTML
 
-### Galería de Material
+### Galeria de Material
 - Tab "Media" en el sidebar
-- Filtros por tipo: Menús, Tarjetas plato, Flyers, Posts redes, Imágenes
-- Vista previa, descarga y eliminación
+- Filtros por tipo: Menus, Tarjetas plato, Flyers, Posts redes, Imagenes
+- Vista previa, descarga y eliminacion
 - Historial de todo el material generado
 
 ### CRM Completo
 - **Dashboard**: Resumen de productos, clientes, pedidos, ingresos, ofertas
-- **Productos**: 8 productos pre-cargados con costos, precios, márgenes
-- **Recetas**: Documentación de recetas con ingredientes, instrucciones, tips
+- **Productos**: 8 productos pre-cargados con costos, precios, margenes
+- **Recetas**: Documentacion de recetas con ingredientes, instrucciones, tips
 - **Clientes**: 3 clientes de ejemplo (restaurante, particular, hotel)
 - **Pedidos**: Tracking de pedidos con estados
-- **Ofertas**: Gestión de promociones con fechas y públicos
+- **Ofertas**: Gestion de promociones con fechas y publicos
 - **Ingredientes**: 12 ingredientes con stock y proveedores
-- **Notas**: Sistema de notas con categorías y prioridades
-- **Actividad**: Log automático de todas las acciones
+- **Notas**: Sistema de notas con categorias y prioridades
+- **Actividad**: Log automatico de todas las acciones
 
-### Acciones CRM Automáticas
-Sora Lella detecta automáticamente cuando Mirko menciona:
-- Nuevo producto/cliente/receta/oferta/pedido → Lo crea en el CRM
-- Actualización de precios → Registra estudio de precios
-- Notas e ideas → Las guarda clasificadas
+### Acciones CRM Automaticas
+Sora Lella detecta automaticamente cuando Mirko menciona:
+- Nuevo producto/cliente/receta/oferta/pedido -> Lo crea en el CRM
+- Actualizacion de precios -> Registra estudio de precios
+- Notas e ideas -> Las guarda clasificadas
 
 ## Data Architecture
 - **Database**: Cloudflare D1 (SQLite distribuido)
@@ -80,7 +93,7 @@ Sora Lella detecta automáticamente cuando Mirko menciona:
 ## Tech Stack
 - **Backend**: Hono (TypeScript) + Cloudflare Workers
 - **Frontend**: Tailwind CSS + Vanilla JS + marked.js
-- **AI**: DeepSeek API + OpenAI API (multi-model)
+- **AI**: DeepSeek API + OpenAI API (multi-model: GPT-4o, DALL-E 3, Whisper, TTS)
 - **Database**: Cloudflare D1
 - **Fonts**: Playfair Display, Inter, Crimson Text
 - **Deploy**: Cloudflare Pages
@@ -89,11 +102,13 @@ Sora Lella detecta automáticamente cuando Mirko menciona:
 
 ### Chat
 - `GET /api/chat/conversations` — Lista conversaciones
-- `POST /api/chat/conversations` — Crear conversación
-- `GET /api/chat/conversations/:id/messages` — Mensajes de conversación
+- `POST /api/chat/conversations` — Crear conversacion
+- `GET /api/chat/conversations/:id/messages` — Mensajes de conversacion
 - `POST /api/chat/send` — Enviar mensaje (con attachments opcionales)
-- `DELETE /api/chat/conversations/:id` — Eliminar conversación
-- `GET /api/chat/gallery` — Galería de material generado
+- `POST /api/chat/voice` — **NUEVO** Enviar mensaje de voz (audio base64 -> Whisper -> AI -> TTS)
+- `POST /api/chat/tts` — **NUEVO** Convertir texto a audio (TTS on-demand)
+- `DELETE /api/chat/conversations/:id` — Eliminar conversacion
+- `GET /api/chat/gallery` — Galeria de material generado
 - `GET /api/chat/gallery/:id` — Detalle de item
 - `DELETE /api/chat/gallery/:id` — Eliminar item
 
@@ -109,24 +124,30 @@ Sora Lella detecta automáticamente cuando Mirko menciona:
 
 ### General
 - `GET /api/health` — Health check
-- `GET /api/settings` — Estado de configuración IA
+- `GET /api/settings` — Estado de configuracion IA
 - `POST /api/test-ai` — Test conexiones IA
-- `GET /api/search?q=` — Búsqueda global
+- `GET /api/search?q=` — Busqueda global
 
 ## Deployment
 - **Platform**: Cloudflare Pages
-- **Status**: ✅ Active
-- **Version**: 2.0.0
+- **Status**: Active
+- **Version**: 3.0.0
 - **Last Updated**: 2026-03-19
 
-## Nota sobre Real-Time
-Cloudflare Workers no soporta WebSocket servers persistentes. La Realtime API de OpenAI requiere WebSocket bidireccional con audio streaming, lo cual no es factible en serverless. En su lugar, se implementaron indicadores de estado en tiempo real y respuestas completas optimizadas para velocidad.
+## Nota sobre Audio
+OpenAI Whisper (speech-to-text) y TTS (text-to-speech) funcionan perfectamente en Cloudflare Workers via API REST. El flujo es:
+1. Frontend graba audio con MediaRecorder API
+2. Audio se envia como base64 al endpoint `/api/chat/voice`
+3. Worker envia audio a Whisper API -> recibe texto transcrito
+4. Texto se procesa con Sora Lella (DeepSeek/GPT-4o segun complejidad)
+5. Respuesta de texto se envia a TTS API -> recibe audio MP3
+6. Frontend muestra transcripcion + texto + reproductor de audio
 
-## Próximos Pasos Posibles
+## Proximos Pasos Posibles
 - Streaming de respuestas con Server-Sent Events
-- Edición de imágenes con DALL-E 3 (variaciones, inpainting)
-- Template gallery con diseños predeterminados
+- Edicion de imagenes con DALL-E 3 (variaciones, inpainting)
+- Template gallery con disenos predeterminados
 - WhatsApp integration para enviar material directo
-- Exportación a PDF desde el material HTML
+- Exportacion a PDF desde el material HTML
 - Notificaciones de stock bajo
-- Reportes automáticos semanales/mensuales
+- Reportes automaticos semanales/mensuales

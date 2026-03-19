@@ -73,6 +73,16 @@ export const mainPage = (c: Context) => {
     .upload-zone { border:2px dashed #d4c4a8; transition:all 0.3s; }
     .upload-zone.dragover { border-color:#b91c1c; background:#fef2f2; }
     .capability-pill { font-size:0.65rem; padding:2px 6px; border-radius:9999px; }
+    /* Audio/Voice styles */
+    .audio-player { background: linear-gradient(135deg, #fef2f2 0%, #fffdf7 100%); border: 1px solid #e8dcc8; }
+    .audio-player audio { height: 32px; }
+    .voice-msg-badge { background: linear-gradient(135deg, #b91c1c, #991b1b); }
+    .listen-btn { transition: all 0.2s; }
+    .listen-btn:hover { transform: scale(1.1); }
+    .listen-btn.playing { color: #b91c1c; animation: pulse-listen 1s infinite; }
+    @keyframes pulse-listen { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    #micBtn.recording { color: #b91c1c; animation: pulse-mic 0.8s infinite; }
+    @keyframes pulse-mic { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
   </style>
 </head>
 <body class="bg-cream-50 font-body text-gray-800 overflow-hidden h-screen">
@@ -84,7 +94,7 @@ export const mainPage = (c: Context) => {
     <img src="/static/logo.png" alt="Peperoncino" class="h-10 w-10 object-contain">
     <div>
       <h1 class="font-display text-pepper-600 text-lg font-bold leading-tight">Peperoncino Pasta Lab</h1>
-      <p class="text-xs text-wood-500 font-italian italic">Sora Lella AI — v2.0 Multi-Model</p>
+      <p class="text-xs text-wood-500 font-italian italic">Sora Lella AI — v3.0 Multi-Model + Voz</p>
     </div>
   </div>
   <div class="flex items-center gap-2">
@@ -138,6 +148,9 @@ export const mainPage = (c: Context) => {
         </button>
         <button onclick="sendQuickMessage('Generá una imagen profesional de nuestros ravioles')" class="w-full text-left px-2 py-1.5 rounded text-xs text-wood-600 hover:bg-pepper-50 transition flex items-center gap-2">
           <span class="text-pepper-400">🎨</span> Generar imagen
+        </button>
+        <button onclick="toggleRecording()" class="w-full text-left px-2 py-1.5 rounded text-xs text-wood-600 hover:bg-pepper-50 transition flex items-center gap-2">
+          <span class="text-pepper-400">🎙️</span> Mensaje de voz
         </button>
       </div>
       <p class="text-xs text-wood-400 font-medium uppercase px-1 mb-1">Conversaciones</p>
@@ -231,6 +244,7 @@ export const mainPage = (c: Context) => {
             <span class="capability-pill bg-amber-100 text-amber-600">Material</span>
             <span class="capability-pill bg-pink-100 text-pink-600">Documentos</span>
             <span class="capability-pill bg-pepper-100 text-pepper-600">CRM</span>
+            <span class="capability-pill bg-red-100 text-red-600">Voz</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
             <button onclick="sendQuickMessage('¿Cómo van las ventas de este mes?')" class="crm-card bg-white rounded-xl p-4 text-left hover:border-pepper-300">
@@ -263,6 +277,22 @@ export const mainPage = (c: Context) => {
       <!-- Input area -->
       <div class="border-t border-wood-200 bg-white px-4 py-3">
         <div class="max-w-3xl mx-auto">
+          <!-- Recording indicator (shown when recording) -->
+          <div id="recordingBar" class="hidden mb-2 bg-pepper-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+              <span class="text-sm font-medium text-pepper-700">Grabando...</span>
+              <span id="recordingTimer" class="text-sm text-pepper-500 font-mono">0:00</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="cancelRecording()" class="text-wood-400 hover:text-pepper-500 p-1.5 rounded-full hover:bg-pepper-100 transition" title="Cancelar">
+                <i class="fas fa-times"></i>
+              </button>
+              <button onclick="stopAndSend()" class="bg-pepper-500 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-pepper-600 transition flex items-center gap-1.5">
+                <i class="fas fa-stop text-xs"></i> Enviar
+              </button>
+            </div>
+          </div>
           <div class="flex items-end gap-2">
             <!-- Upload button -->
             <button onclick="document.getElementById('fileInput').click()" title="Subir imagen o documento"
@@ -271,17 +301,22 @@ export const mainPage = (c: Context) => {
             </button>
             <input id="fileInput" type="file" multiple accept="image/*,.pdf,.txt,.csv,.doc,.docx" class="hidden" onchange="handleFileSelect(event)" />
             <div class="flex-1 relative">
-              <textarea id="chatInput" rows="1" placeholder="Hablá con Sora Lella... (subí imágenes y documentos con el clip)"
+              <textarea id="chatInput" rows="1" placeholder="Hablá con Sora Lella... o mantené presionado el mic"
                 class="w-full resize-none bg-cream-50 border border-wood-200 rounded-2xl px-4 py-3 pr-12 text-sm focus:outline-none focus:border-pepper-400 focus:ring-1 focus:ring-pepper-200 transition"
                 onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
             </div>
+            <!-- Mic button (hold to record or click to toggle) -->
+            <button id="micBtn" onclick="toggleRecording()" title="Mantené presionado para grabar o hacé clic"
+              class="text-wood-400 hover:text-pepper-500 transition p-2 rounded-full hover:bg-pepper-50 flex-shrink-0 relative">
+              <i class="fas fa-microphone text-lg"></i>
+            </button>
             <button id="sendBtn" onclick="sendMessage()"
               class="bg-pepper-500 text-white rounded-full w-11 h-11 flex items-center justify-center hover:bg-pepper-600 transition flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
               <i class="fas fa-paper-plane text-sm"></i>
             </button>
           </div>
           <p class="text-xs text-wood-400 mt-1.5 text-center">
-            DeepSeek + OpenAI GPT-4o | Vision | DALL-E 3 | Material publicitario
+            DeepSeek + OpenAI GPT-4o | Vision | DALL-E 3 | Whisper + TTS Voz
           </p>
         </div>
       </div>
@@ -373,6 +408,14 @@ let currentPanel = 'dashboard';
 let conversations = [];
 let isLoading = false;
 let pendingAttachments = []; // {name, type, data(base64), preview(dataurl)}
+
+// ========== VOICE / AUDIO STATE ==========
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let recordingStartTime = null;
+let recordingTimerInterval = null;
+let currentAudioPlayer = null; // Currently playing TTS audio
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -546,21 +589,23 @@ function createMessageHtml(msg) {
         }
       } catch {}
     }
-    return '<div class="flex justify-end fade-in"><div class="msg-user rounded-2xl rounded-br-md px-4 py-3 max-w-[85%] text-white text-sm shadow-md">' + escapeHtml(msg.content.replace(/\\n\\[.*\\]$/, '')) + attachHtml + '</div></div>';
+    return '<div class="flex justify-end fade-in"><div class="msg-user rounded-2xl rounded-br-md px-4 py-3 max-w-[85%] text-white text-sm shadow-md">' + escapeHtml(msg.content.split(String.fromCharCode(10))[0]) + attachHtml + '</div></div>';
   }
   
   let html = '';
   const content = msg.content || '';
   
   // Check for generated images
-  const imgMatch = content.match(/!\\[.*?\\]\\((https?:\\/\\/[^)]+)\\)/);
+  const imgMatch = content.match(new RegExp('!\\[.*?\\]\\((https?://[^)]+)\\)'));
   if (imgMatch) {
-    html = '<div class="my-2"><img src="' + imgMatch[1] + '" alt="Imagen generada" class="max-w-full rounded-xl shadow-lg cursor-pointer" onclick="showImageFull(this.src)" /><div class="flex gap-2 mt-2"><a href="' + imgMatch[1] + '" target="_blank" download class="text-xs bg-pepper-500 text-white px-3 py-1 rounded-full hover:bg-pepper-600"><i class="fas fa-download mr-1"></i>Descargar</a><button onclick="showImageFull(\\'' + imgMatch[1] + '\\')" class="text-xs bg-wood-200 text-wood-600 px-3 py-1 rounded-full hover:bg-wood-300"><i class="fas fa-expand mr-1"></i>Ampliar</button></div></div>';
+    html = '<div class="my-2"><img src="' + imgMatch[1] + '" alt="Imagen generada" class="max-w-full rounded-xl shadow-lg cursor-pointer" onclick="showImageFull(this.src)" /><div class="flex gap-2 mt-2"><a href="' + imgMatch[1] + '" target="_blank" download class="text-xs bg-pepper-500 text-white px-3 py-1 rounded-full hover:bg-pepper-600"><i class="fas fa-download mr-1"></i>Descargar</a></div></div>';
   } else {
     // Check for HTML material (code block)
-    const htmlMatch = content.match(/\`\`\`html\\s*([\\s\\S]*?)\`\`\`/);
+    var codeBlockRe = new RegExp(String.fromCharCode(96,96,96) + 'html' + '\\s*([\\s\\S]*?)' + String.fromCharCode(96,96,96));
+    var codeBlockReClean = new RegExp(String.fromCharCode(96,96,96) + 'html' + '[\\s\\S]*?' + String.fromCharCode(96,96,96));
+    const htmlMatch = content.match(codeBlockRe);
     if (htmlMatch) {
-      const cleanContent = content.replace(/\`\`\`html[\\s\\S]*?\`\`\`/, '').trim();
+      const cleanContent = content.replace(codeBlockReClean, '').trim();
       const rendered = typeof marked !== 'undefined' ? marked.parse(cleanContent) : cleanContent;
       const encoded = btoa(unescape(encodeURIComponent(htmlMatch[1])));
       html = rendered + '<div class="material-preview my-3"><div class="bg-pepper-50 px-3 py-1.5 flex items-center justify-between"><span class="text-xs font-medium text-pepper-600"><i class="fas fa-palette mr-1"></i>Material generado</span><div class="flex gap-2"><button onclick="previewMaterial(\\'' + encoded + '\\')" class="text-xs text-pepper-500 hover:text-pepper-700"><i class="fas fa-eye mr-1"></i>Ver</button><button onclick="downloadMaterial(\\'' + encoded + '\\')" class="text-xs text-pepper-500 hover:text-pepper-700"><i class="fas fa-download mr-1"></i>HTML</button></div></div><iframe srcdoc="' + escapeHtml(htmlMatch[1]).substring(0, 5000) + '" style="height:300px;pointer-events:none;" scrolling="no"></iframe></div>';
@@ -578,7 +623,11 @@ function createMessageHtml(msg) {
       }
     } catch {}
   }
-  return '<div class="flex justify-start fade-in"><div class="flex gap-2.5 max-w-[85%]"><div class="w-8 h-8 rounded-full bg-pepper-100 flex items-center justify-center flex-shrink-0 mt-1"><span class="text-sm">🌶️</span></div><div class="min-w-0"><div class="msg-assistant rounded-2xl rounded-bl-md px-4 py-3 text-sm shadow-sm markdown-body">' + html + '</div>' + actionsHtml + '<p class="text-xs text-wood-400 mt-1">' + (msg.model_used || '') + '</p></div></div></div>';
+
+  // Prepare escaped text for listen function (avoid quote issues)
+  const listenText = (msg.content || '').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(new RegExp(String.fromCharCode(10), 'g'), ' ').substring(0, 500);
+
+  return '<div class="flex justify-start fade-in"><div class="flex gap-2.5 max-w-[85%]"><div class="w-8 h-8 rounded-full bg-pepper-100 flex items-center justify-center flex-shrink-0 mt-1"><span class="text-sm">🌶️</span></div><div class="min-w-0"><div class="msg-assistant rounded-2xl rounded-bl-md px-4 py-3 text-sm shadow-sm markdown-body">' + html + '</div>' + actionsHtml + '<div class="flex items-center gap-2 mt-1"><p class="text-xs text-wood-400">' + (msg.model_used || '') + '</p><button onclick="listenToMessage(\\'' + listenText + '\\', this)" class="listen-btn text-xs text-wood-400 hover:text-pepper-500 transition flex items-center gap-1" title="Escuchar respuesta"><i class="fas fa-volume-up"></i></button></div></div></div></div>';
 }
 
 function addTypingIndicator() {
@@ -594,6 +643,296 @@ function updateTypingStatus(text) {
 
 function removeTypingIndicator() {
   document.getElementById('typingIndicator')?.remove();
+}
+
+// ========== VOICE RECORDING ==========
+
+async function toggleRecording() {
+  if (isRecording) {
+    stopAndSend();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 } 
+    });
+    
+    // Try preferred formats
+    const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+    let selectedMime = 'audio/webm';
+    for (const mime of mimeTypes) {
+      if (MediaRecorder.isTypeSupported(mime)) { selectedMime = mime; break; }
+    }
+
+    mediaRecorder = new MediaRecorder(stream, { mimeType: selectedMime });
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+    };
+
+    mediaRecorder.start(100); // Collect data every 100ms
+    isRecording = true;
+    recordingStartTime = Date.now();
+
+    // Update UI
+    document.getElementById('recordingBar').classList.remove('hidden');
+    document.getElementById('micBtn').classList.add('recording');
+    
+    // Start timer
+    recordingTimerInterval = setInterval(updateRecordingTimer, 100);
+  } catch (err) {
+    console.error('Microphone error:', err);
+    if (err.name === 'NotAllowedError') {
+      alert('Necesitás dar permiso al micrófono para enviar mensajes de voz. Revisá los permisos del navegador.');
+    } else {
+      alert('Error accediendo al micrófono: ' + err.message);
+    }
+  }
+}
+
+function updateRecordingTimer() {
+  if (!recordingStartTime) return;
+  const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  const el = document.getElementById('recordingTimer');
+  if (el) el.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+function cancelRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+  }
+  isRecording = false;
+  audioChunks = [];
+  recordingStartTime = null;
+  clearInterval(recordingTimerInterval);
+  document.getElementById('recordingBar').classList.add('hidden');
+  document.getElementById('micBtn').classList.remove('recording');
+}
+
+async function stopAndSend() {
+  if (!mediaRecorder || !isRecording) return;
+
+  return new Promise((resolve) => {
+    mediaRecorder.onstop = async () => {
+      mediaRecorder.stream.getTracks().forEach(t => t.stop());
+      
+      isRecording = false;
+      clearInterval(recordingTimerInterval);
+      document.getElementById('recordingBar').classList.add('hidden');
+      document.getElementById('micBtn').classList.remove('recording');
+
+      if (!audioChunks.length) { resolve(); return; }
+
+      const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      audioChunks = [];
+
+      // Minimum 0.5 seconds of audio
+      const duration = (Date.now() - recordingStartTime) / 1000;
+      recordingStartTime = null;
+      if (duration < 0.5) {
+        alert('El mensaje de voz es muy corto. Mantené presionado más tiempo.');
+        resolve();
+        return;
+      }
+
+      // Convert to base64
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(',')[1];
+        await sendVoiceMessage(base64, mediaRecorder.mimeType, duration);
+        resolve();
+      };
+      reader.readAsDataURL(audioBlob);
+    };
+
+    mediaRecorder.stop();
+  });
+}
+
+async function sendVoiceMessage(audioBase64, mimeType, duration) {
+  if (isLoading) return;
+  if (!currentConversationId) await newConversation();
+
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  showChat();
+  const list = document.getElementById('messagesList');
+
+  // Show user voice message bubble
+  const durationStr = Math.floor(duration) + 's';
+  list.insertAdjacentHTML('beforeend', 
+    '<div class="flex justify-end fade-in"><div class="msg-user rounded-2xl rounded-br-md px-4 py-3 max-w-[85%] text-white text-sm shadow-md">' +
+    '<div class="flex items-center gap-2"><i class="fas fa-microphone"></i> <span>Mensaje de voz (' + durationStr + ')</span></div>' +
+    '</div></div>'
+  );
+  addTypingIndicator();
+  updateTypingStatus('Transcribiendo audio...');
+
+  try {
+    const payload = {
+      conversation_id: currentConversationId,
+      audio_data: audioBase64,
+      audio_type: mimeType,
+      text_with_audio: document.getElementById('chatInput').value.trim() || undefined
+    };
+
+    document.getElementById('chatInput').value = '';
+
+    const res = await fetch('/api/chat/voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    removeTypingIndicator();
+
+    if (data.success) {
+      // Show transcription
+      list.insertAdjacentHTML('beforeend',
+        '<div class="flex justify-end fade-in"><div class="bg-pepper-100 rounded-2xl rounded-br-md px-4 py-2 max-w-[85%] text-sm shadow-sm">' +
+        '<p class="text-xs text-pepper-400 mb-1"><i class="fas fa-language mr-1"></i>Transcripción Whisper</p>' +
+        '<p class="text-pepper-800 italic">"' + escapeHtml(data.data.transcription) + '"</p>' +
+        '</div></div>'
+      );
+
+      // Show AI response
+      const responseMsg = {
+        role: 'assistant', 
+        content: data.data.response,
+        model_used: data.data.provider + '/' + data.data.model,
+        actions_taken: data.data.actions?.length ? JSON.stringify(data.data.actions) : null
+      };
+      list.insertAdjacentHTML('beforeend', createMessageHtml(responseMsg));
+
+      // Show audio player if TTS was generated
+      if (data.data.audio?.data) {
+        const audioId = 'tts-' + Date.now();
+        list.insertAdjacentHTML('beforeend',
+          '<div class="flex justify-start fade-in"><div class="flex gap-2.5 max-w-[85%]"><div class="w-8 h-8 rounded-full bg-pepper-100 flex items-center justify-center flex-shrink-0 mt-1"><span class="text-sm">🔊</span></div><div class="audio-player rounded-2xl px-4 py-3 shadow-sm">' +
+          '<div class="flex items-center gap-3">' +
+          '<button onclick="playTTSAudio(\\'' + audioId + '\\', this)" class="listen-btn w-9 h-9 rounded-full bg-pepper-500 text-white flex items-center justify-center hover:bg-pepper-600"><i class="fas fa-play text-sm"></i></button>' +
+          '<div><p class="text-xs font-medium text-pepper-700">Respuesta de voz de Sora Lella</p><p class="text-xs text-wood-400">OpenAI TTS · Nova</p></div>' +
+          '</div>' +
+          '<audio id="' + audioId + '" src="data:audio/mpeg;base64,' + data.data.audio.data + '" preload="auto"></audio>' +
+          '</div></div></div>'
+        );
+      }
+
+      // Image if generated
+      if (data.data.imageUrl) {
+        list.insertAdjacentHTML('beforeend', createMessageHtml({
+          role: 'assistant', content: '![imagen generada](' + data.data.imageUrl + ')',
+          model_used: 'dall-e-3/image'
+        }));
+      }
+    } else {
+      list.insertAdjacentHTML('beforeend', createMessageHtml({
+        role: 'assistant', content: '❌ Error de voz: ' + (data.error || 'No pude procesar el audio'),
+        model_used: 'error'
+      }));
+    }
+    scrollToBottom();
+    loadConversations();
+  } catch (e) {
+    removeTypingIndicator();
+    list.insertAdjacentHTML('beforeend', createMessageHtml({
+      role: 'assistant', content: '❌ Error de conexión. Intentá de nuevo.', model_used: 'error'
+    }));
+  }
+  isLoading = false;
+}
+
+function playTTSAudio(audioId, btn) {
+  const audio = document.getElementById(audioId);
+  if (!audio) return;
+
+  // Stop any currently playing audio
+  if (currentAudioPlayer && currentAudioPlayer !== audio) {
+    currentAudioPlayer.pause();
+    currentAudioPlayer.currentTime = 0;
+    // Reset previous button
+    document.querySelectorAll('.listen-btn.playing').forEach(b => {
+      b.classList.remove('playing');
+      b.innerHTML = '<i class="fas fa-play text-sm"></i>';
+    });
+  }
+
+  if (audio.paused) {
+    audio.play();
+    currentAudioPlayer = audio;
+    btn.classList.add('playing');
+    btn.innerHTML = '<i class="fas fa-pause text-sm"></i>';
+    
+    audio.onended = () => {
+      btn.classList.remove('playing');
+      btn.innerHTML = '<i class="fas fa-play text-sm"></i>';
+      currentAudioPlayer = null;
+    };
+  } else {
+    audio.pause();
+    btn.classList.remove('playing');
+    btn.innerHTML = '<i class="fas fa-play text-sm"></i>';
+    currentAudioPlayer = null;
+  }
+}
+
+// Listen button for ANY assistant message (TTS on-demand)
+async function listenToMessage(text, btn) {
+  if (btn.classList.contains('loading-tts')) return;
+  
+  btn.classList.add('loading-tts');
+  const origHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>';
+
+  try {
+    const res = await fetch('/api/chat/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text })
+    });
+    const data = await res.json();
+
+    if (data.success && data.data?.audio) {
+      // Stop any existing player
+      if (currentAudioPlayer) {
+        currentAudioPlayer.pause();
+        currentAudioPlayer.currentTime = 0;
+      }
+
+      const audio = new Audio('data:audio/mpeg;base64,' + data.data.audio);
+      currentAudioPlayer = audio;
+      btn.innerHTML = '<i class="fas fa-pause text-xs"></i>';
+      btn.classList.remove('loading-tts');
+      btn.classList.add('playing');
+
+      audio.play();
+      audio.onended = () => {
+        btn.innerHTML = origHtml;
+        btn.classList.remove('playing');
+        currentAudioPlayer = null;
+      };
+    } else {
+      btn.innerHTML = origHtml;
+      btn.classList.remove('loading-tts');
+      alert('Error generando audio: ' + (data.error || 'Desconocido'));
+    }
+  } catch (e) {
+    btn.innerHTML = origHtml;
+    btn.classList.remove('loading-tts');
+    console.error('TTS error:', e);
+  }
 }
 
 // ========== SEND MESSAGE ==========

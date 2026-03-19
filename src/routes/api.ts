@@ -16,13 +16,13 @@ apiRoutes.get('/health', (c) => {
     status: 'ok',
     app: 'Peperoncino Pasta Lab',
     ai: 'Sora Lella',
-    version: '2.0.0',
-    features: ['chat', 'vision', 'image-gen', 'material-gen', 'documents', 'crm', 'gallery'],
+    version: '3.0.0',
+    features: ['chat', 'vision', 'image-gen', 'material-gen', 'documents', 'crm', 'gallery', 'voice', 'whisper', 'tts'],
     deepseek: !!c.env.DEEPSEEK_API_KEY,
     openai: !!c.env.OPENAI_API_KEY,
     models: {
       deepseek: c.env.DEEPSEEK_API_KEY ? ['deepseek-chat'] : [],
-      openai: c.env.OPENAI_API_KEY ? ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'dall-e-3', 'o1-mini'] : []
+      openai: c.env.OPENAI_API_KEY ? ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'dall-e-3', 'o1-mini', 'whisper-1', 'tts-1'] : []
     }
   })
 })
@@ -40,7 +40,9 @@ apiRoutes.get('/settings', (c) => {
         vision: !!c.env.OPENAI_API_KEY,
         image_generation: !!c.env.OPENAI_API_KEY,
         material_generation: !!c.env.OPENAI_API_KEY,
-        document_analysis: !!c.env.OPENAI_API_KEY
+        document_analysis: !!c.env.OPENAI_API_KEY,
+        voice_input: !!c.env.OPENAI_API_KEY,
+        voice_output: !!c.env.OPENAI_API_KEY
       }
     }
   })

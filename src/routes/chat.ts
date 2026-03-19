@@ -1,6 +1,7 @@
-// Chat Routes v3.0 - Full multimedia: vision, image gen, material, documents
+// Chat Routes v3.0 - Full multimedia: vision, image gen, material, documents, VOICE
 import { Hono } from 'hono'
 import { classifyMessage, chatWithSoraLella, buildVisionMessages, parseCrmActions, getCrmSummary, executeCrmActions, saveToGallery } from '../lib/ai'
+import { transcribeAudio, textToSpeech } from '../lib/audio'
 
 type Bindings = {
   DB: D1Database
@@ -192,6 +193,188 @@ chatRoutes.post('/send', async (c) => {
     })
   } catch (e: any) {
     console.error('Chat error:', e)
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ========== VOICE MESSAGE (Whisper + AI + TTS) ==========
+
+chatRoutes.post('/voice', async (c) => {
+  const db = c.env.DB
+  const body = await c.req.json()
+  const { conversation_id, audio_data, audio_type, text_with_audio } = body
+  // audio_data: base64 encoded audio
+  // audio_type: 'audio/webm', 'audio/mp4', etc.
+  // text_with_audio: optional text to send along with audio
+
+  if (!audio_data || !conversation_id) {
+    return c.json({ success: false, error: 'Faltan datos de audio' }, 400)
+  }
+
+  const openai = c.env.OPENAI_API_KEY
+  const baseUrl = c.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+
+  if (!openai) {
+    return c.json({ success: false, error: 'OpenAI API key necesaria para audio' }, 400)
+  }
+
+  try {
+    // Step 1: Transcribe audio with Whisper
+    const transcription = await transcribeAudio(
+      audio_data,
+      audio_type || 'audio/webm',
+      openai,
+      baseUrl
+    )
+
+    if (!transcription.text || transcription.text.trim().length < 2) {
+      return c.json({ success: false, error: 'No se pudo reconocer el audio. Intentá hablar más fuerte o claro.' }, 400)
+    }
+
+    const userMessage = text_with_audio
+      ? `${text_with_audio}\n\n[Mensaje de voz]: ${transcription.text}`
+      : transcription.text
+
+    // Step 2: Save user message (as voice)
+    await db.prepare('INSERT INTO messages (conversation_id, role, content, actions_taken) VALUES (?, ?, ?, ?)')
+      .bind(conversation_id, 'user', `🎙️ ${userMessage}`, JSON.stringify({ type: 'voice', duration: transcription.duration, language: transcription.language })).run()
+
+    // Step 3: Classify and process with Sora Lella
+    const classification = await classifyMessage(userMessage, false, [], c.env)
+
+    const history = await db.prepare(
+      'SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY created_at DESC LIMIT 15'
+    ).bind(conversation_id).all()
+
+    const chatMessages = (history.results || []).reverse().map((m: any) => ({
+      role: m.role, content: m.content
+    }))
+
+    const crmContext = await getCrmSummary(db)
+
+    const aiResponse = await chatWithSoraLella(
+      chatMessages, crmContext, c.env,
+      classification.complexity, false,
+      undefined,
+      classification.suggested_model
+    )
+
+    // Step 4: Parse CRM actions
+    const { cleanResponse, actions } = parseCrmActions(aiResponse.content)
+
+    let actionResults: string[] = []
+    if (actions.length > 0) actionResults = await executeCrmActions(db, actions)
+
+    // Step 5: Save to gallery if material was generated
+    let galleryId: number | null = null
+    if (aiResponse.materialType || aiResponse.imageUrl) {
+      try {
+        let htmlContent: string | undefined
+        const htmlMatch = cleanResponse.match(/```html\s*([\s\S]*?)```/)
+        if (htmlMatch) htmlContent = htmlMatch[1].trim()
+
+        galleryId = await saveToGallery(db, {
+          title: (userMessage).substring(0, 100),
+          description: aiResponse.materialType || 'imagen',
+          image_url: aiResponse.imageUrl,
+          html_content: htmlContent,
+          material_type: aiResponse.materialType || 'image',
+          conversation_id,
+          prompt_used: userMessage
+        })
+      } catch (e) { console.error('Gallery save error:', e) }
+    }
+
+    // Step 6: Save assistant message
+    const modelInfo = `${aiResponse.provider}/${aiResponse.model}`
+    await db.prepare(
+      'INSERT INTO messages (conversation_id, role, content, model_used, tokens_used, actions_taken) VALUES (?,?,?,?,?,?)'
+    ).bind(
+      conversation_id, 'assistant', cleanResponse,
+      modelInfo, aiResponse.tokens,
+      actionResults.length > 0 ? JSON.stringify(actionResults) : null
+    ).run()
+
+    // Step 7: Generate TTS response audio
+    let audioResponse: { audioBase64: string; contentType: string } | null = null
+    try {
+      audioResponse = await textToSpeech(cleanResponse, openai, baseUrl, 'nova', 'tts-1', 1.0)
+    } catch (ttsError: any) {
+      console.error('TTS error (non-fatal):', ttsError.message)
+      // TTS failure is non-fatal, we still return the text response
+    }
+
+    // Step 8: Update conversation
+    await db.prepare('UPDATE conversations SET message_count = message_count + 2, updated_at = CURRENT_TIMESTAMP WHERE id = ?').bind(conversation_id).run()
+
+    // Auto-title
+    const conv = await db.prepare('SELECT message_count FROM conversations WHERE id = ?').bind(conversation_id).first() as any
+    if (conv && conv.message_count <= 3) {
+      const title = '🎙️ ' + userMessage.substring(0, 55) + (userMessage.length > 55 ? '...' : '')
+      await db.prepare('UPDATE conversations SET title = ? WHERE id = ?').bind(title, conversation_id).run()
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        transcription: transcription.text,
+        transcription_language: transcription.language,
+        transcription_duration: transcription.duration,
+        response: cleanResponse,
+        model: aiResponse.model,
+        provider: aiResponse.provider,
+        tokens: aiResponse.tokens,
+        imageUrl: aiResponse.imageUrl || null,
+        materialType: aiResponse.materialType || null,
+        galleryId,
+        actions: actionResults,
+        classification,
+        // TTS audio response
+        audio: audioResponse ? {
+          data: audioResponse.audioBase64,
+          contentType: audioResponse.contentType
+        } : null
+      }
+    })
+  } catch (e: any) {
+    console.error('Voice processing error:', e)
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ========== TTS ONLY (Convert text to speech) ==========
+
+chatRoutes.post('/tts', async (c) => {
+  const body = await c.req.json()
+  const { text, voice, speed } = body
+
+  if (!text) {
+    return c.json({ success: false, error: 'Falta texto para convertir' }, 400)
+  }
+
+  const openai = c.env.OPENAI_API_KEY
+  const baseUrl = c.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+
+  if (!openai) {
+    return c.json({ success: false, error: 'OpenAI API key necesaria para TTS' }, 400)
+  }
+
+  try {
+    const result = await textToSpeech(
+      text, openai, baseUrl,
+      voice || 'nova',
+      'tts-1',
+      speed || 1.0
+    )
+
+    return c.json({
+      success: true,
+      data: {
+        audio: result.audioBase64,
+        contentType: result.contentType
+      }
+    })
+  } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500)
   }
 })
