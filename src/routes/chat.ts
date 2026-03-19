@@ -4,6 +4,7 @@ import { classifyMessage, chatWithSoraLella, parseCrmActions, getCrmSummary, exe
 
 type Bindings = {
   DB: D1Database
+  DEEPSEEK_API_KEY: string
   OPENAI_API_KEY: string
   OPENAI_BASE_URL: string
 }
@@ -78,19 +79,14 @@ chatRoutes.post('/send', async (c) => {
     return c.json({ success: false, error: 'Faltan datos' }, 400)
   }
 
-  const config = {
-    apiKey: c.env.OPENAI_API_KEY,
-    baseUrl: c.env.OPENAI_BASE_URL
-  }
-
   try {
     // 1. Save user message
     await db.prepare(
       'INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)'
     ).bind(conversation_id, 'user', message).run()
 
-    // 2. Classify message complexity
-    const classification = await classifyMessage(message, config)
+    // 2. Classify message complexity (uses DeepSeek - fast)
+    const classification = await classifyMessage(message, c.env)
 
     // 3. Get conversation history (last 20 messages)
     const history = await db.prepare(
@@ -105,11 +101,11 @@ chatRoutes.post('/send', async (c) => {
     // 4. Get CRM context
     const crmContext = await getCrmSummary(db)
 
-    // 5. Get AI response
+    // 5. Get AI response (DeepSeek for simple, OpenAI for complex)
     const aiResponse = await chatWithSoraLella(
       chatMessages,
       crmContext,
-      config,
+      c.env,
       classification.complexity
     )
 
@@ -127,7 +123,7 @@ chatRoutes.post('/send', async (c) => {
       'INSERT INTO messages (conversation_id, role, content, model_used, tokens_used, actions_taken) VALUES (?, ?, ?, ?, ?, ?)'
     ).bind(
       conversation_id, 'assistant', cleanResponse,
-      aiResponse.model, aiResponse.tokens,
+      `${aiResponse.provider}/${aiResponse.model}`, aiResponse.tokens,
       actionResults.length > 0 ? JSON.stringify(actionResults) : null
     ).run()
 
@@ -148,6 +144,7 @@ chatRoutes.post('/send', async (c) => {
       data: {
         response: cleanResponse,
         model: aiResponse.model,
+        provider: aiResponse.provider,
         tokens: aiResponse.tokens,
         actions: actionResults,
         classification

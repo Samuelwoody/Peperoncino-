@@ -1,11 +1,13 @@
 // AI Integration Layer
-// Routes requests to different AI models based on complexity
+// DeepSeek for conversations & simple tasks | OpenAI for complex tasks
+// Both APIs are OpenAI-compatible
 
 import { SORA_LELLA_SYSTEM_PROMPT, SORA_LELLA_CONTEXT_TEMPLATE, TASK_CLASSIFIER_PROMPT } from './prompts'
 
-interface AIConfig {
+interface AIProvider {
   apiKey: string
   baseUrl: string
+  models: { fast: string; smart: string }
 }
 
 interface ChatMessage {
@@ -19,11 +21,47 @@ interface ClassificationResult {
   action_type: string
 }
 
-async function callAI(config: AIConfig, model: string, messages: any[], temperature = 0.7, maxTokens = 2000) {
-  const response = await fetch(`${config.baseUrl}/chat/completions`, {
+// Build provider configs from environment
+function getProviders(env: any): { deepseek: AIProvider | null; openai: AIProvider | null } {
+  const deepseek: AIProvider | null = env.DEEPSEEK_API_KEY ? {
+    apiKey: env.DEEPSEEK_API_KEY,
+    baseUrl: 'https://api.deepseek.com',
+    models: { fast: 'deepseek-chat', smart: 'deepseek-reasoner' }
+  } : null
+
+  const openai: AIProvider | null = env.OPENAI_API_KEY ? {
+    apiKey: env.OPENAI_API_KEY,
+    baseUrl: env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+    models: { fast: 'gpt-5-nano', smart: 'gpt-5-mini' }
+  } : null
+
+  return { deepseek, openai }
+}
+
+// Pick the right provider: DeepSeek for simple, OpenAI for complex, with fallback
+function pickProvider(
+  providers: { deepseek: AIProvider | null; openai: AIProvider | null },
+  complexity: 'simple' | 'complex'
+): { provider: AIProvider; model: string } {
+  const { deepseek, openai } = providers
+
+  if (complexity === 'complex' && openai) {
+    return { provider: openai, model: openai.models.smart }
+  }
+  if (deepseek) {
+    return { provider: deepseek, model: deepseek.models.fast }
+  }
+  if (openai) {
+    return { provider: openai, model: openai.models.fast }
+  }
+  throw new Error('No hay ninguna API de IA configurada. Configurá DEEPSEEK_API_KEY o OPENAI_API_KEY.')
+}
+
+async function callAI(provider: AIProvider, model: string, messages: any[], temperature = 0.7, maxTokens = 2000) {
+  const response = await fetch(`${provider.baseUrl}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${config.apiKey}`,
+      'Authorization': `Bearer ${provider.apiKey}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens })
@@ -31,19 +69,22 @@ async function callAI(config: AIConfig, model: string, messages: any[], temperat
 
   if (!response.ok) {
     const errText = await response.text()
-    throw new Error(`AI API error: ${response.status} - ${errText}`)
+    throw new Error(`AI API error (${model}): ${response.status} - ${errText}`)
   }
 
   return await response.json() as any
 }
 
-// Classify message complexity using fast model
+// Classify message complexity using DeepSeek (fast & cheap)
 export async function classifyMessage(
   message: string,
-  config: AIConfig
+  env: any
 ): Promise<ClassificationResult> {
   try {
-    const data = await callAI(config, 'gpt-5-nano', [
+    const providers = getProviders(env)
+    const { provider, model } = pickProvider(providers, 'simple')
+
+    const data = await callAI(provider, model, [
       { role: 'system', content: TASK_CLASSIFIER_PROMPT },
       { role: 'user', content: message }
     ], 0.1, 200)
@@ -64,22 +105,25 @@ export async function classifyMessage(
 export async function chatWithSoraLella(
   messages: ChatMessage[],
   crmContext: string,
-  config: AIConfig,
+  env: any,
   complexity: 'simple' | 'complex' = 'simple'
-): Promise<{ content: string; model: string; tokens: number }> {
+): Promise<{ content: string; model: string; tokens: number; provider: string }> {
+  const providers = getProviders(env)
+  const { provider, model } = pickProvider(providers, complexity)
+
   const systemMessage = SORA_LELLA_SYSTEM_PROMPT + SORA_LELLA_CONTEXT_TEMPLATE(crmContext)
-  const model = complexity === 'complex' ? 'gpt-5-mini' : 'gpt-5-nano'
 
   const allMessages: ChatMessage[] = [
     { role: 'system', content: systemMessage },
     ...messages
   ]
 
-  const data = await callAI(config, model, allMessages, 0.7, 2000)
+  const data = await callAI(provider, model, allMessages, 0.7, 2000)
   const content = data.choices?.[0]?.message?.content || 'Lo siento, no pude procesar tu mensaje.'
   const tokens = data.usage?.total_tokens || 0
+  const providerName = provider.baseUrl.includes('deepseek') ? 'DeepSeek' : 'OpenAI'
 
-  return { content, model, tokens }
+  return { content, model, tokens, provider: providerName }
 }
 
 // Parse CRM actions from Sora Lella's response
@@ -114,14 +158,11 @@ export async function getCrmSummary(db: D1Database): Promise<string> {
     try {
       const top = await db.prepare(`
         SELECT p.name, SUM(oi.quantity) as total_qty 
-        FROM order_items oi 
-        JOIN products p ON oi.product_id = p.id 
-        GROUP BY p.id 
-        ORDER BY total_qty DESC 
-        LIMIT 3
+        FROM order_items oi JOIN products p ON oi.product_id = p.id 
+        GROUP BY p.id ORDER BY total_qty DESC LIMIT 3
       `).all()
       topProducts = top.results?.map((r: any) => r.name) || []
-    } catch (e) { /* empty table */ }
+    } catch (e) { /* empty */ }
 
     return `
 - Productos activos: ${(products as any)?.count || 0}

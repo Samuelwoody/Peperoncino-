@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 
 type Bindings = {
   DB: D1Database
+  DEEPSEEK_API_KEY: string
   OPENAI_API_KEY: string
   OPENAI_BASE_URL: string
 }
@@ -15,8 +16,9 @@ apiRoutes.get('/health', (c) => {
     status: 'ok',
     app: 'Peperoncino Pasta Lab',
     ai: 'Sora Lella',
-    version: '1.0.0',
-    ai_configured: !!(c.env.OPENAI_API_KEY && c.env.OPENAI_BASE_URL)
+    version: '1.1.0',
+    deepseek: !!c.env.DEEPSEEK_API_KEY,
+    openai: !!c.env.OPENAI_API_KEY
   })
 })
 
@@ -25,39 +27,44 @@ apiRoutes.get('/settings', (c) => {
   return c.json({
     success: true,
     data: {
-      ai_configured: !!(c.env.OPENAI_API_KEY && c.env.OPENAI_BASE_URL),
-      base_url: c.env.OPENAI_BASE_URL ? c.env.OPENAI_BASE_URL.replace(/\/v1$/, '/...') : 'not set',
-      api_key_set: !!c.env.OPENAI_API_KEY
+      deepseek_configured: !!c.env.DEEPSEEK_API_KEY,
+      openai_configured: !!c.env.OPENAI_API_KEY,
+      any_ai: !!(c.env.DEEPSEEK_API_KEY || c.env.OPENAI_API_KEY)
     }
   })
 })
 
 // Test AI connection
 apiRoutes.post('/test-ai', async (c) => {
+  const apiKey = c.env.DEEPSEEK_API_KEY
+  if (!apiKey) {
+    return c.json({ success: false, error: 'DEEPSEEK_API_KEY no configurada' })
+  }
   try {
-    const response = await fetch(`${c.env.OPENAI_BASE_URL}/chat/completions`, {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${c.env.OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-5-nano',
-        messages: [{ role: 'user', content: 'Di "Ciao!" y nada más.' }],
-        max_tokens: 20
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: 'Di solo: "Ciao Mirko! Sora Lella está lista!" y nada más.' }],
+        max_tokens: 30
       })
     })
 
     if (!response.ok) {
       const err = await response.text()
-      return c.json({ success: false, error: `API Error ${response.status}: ${err}` })
+      return c.json({ success: false, error: `DeepSeek Error ${response.status}: ${err}` })
     }
 
     const data = await response.json() as any
     return c.json({
       success: true,
       message: data.choices?.[0]?.message?.content || 'OK',
-      model: data.model
+      model: data.model,
+      provider: 'DeepSeek'
     })
   } catch (e: any) {
     return c.json({ success: false, error: e.message })

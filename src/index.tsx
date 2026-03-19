@@ -7,6 +7,7 @@ import { mainPage } from './pages/main'
 
 type Bindings = {
   DB: D1Database
+  DEEPSEEK_API_KEY: string
   OPENAI_API_KEY: string
   OPENAI_BASE_URL: string
 }
