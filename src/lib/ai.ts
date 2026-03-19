@@ -32,7 +32,7 @@ function getProviders(env: any): { deepseek: AIProvider | null; openai: AIProvid
   const openai: AIProvider | null = env.OPENAI_API_KEY ? {
     apiKey: env.OPENAI_API_KEY,
     baseUrl: env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    models: { fast: 'gpt-5-nano', smart: 'gpt-5-mini' }
+    models: { fast: 'gpt-4o-mini', smart: 'gpt-4o' }
   } : null
 
   return { deepseek, openai }
