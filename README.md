@@ -1,145 +1,132 @@
 # Peperoncino Pasta Lab - Sora Lella AI CRM
 
-## Descripcion General
-- **Nombre**: Peperoncino Pasta Lab
-- **Ubicacion**: Traslasierra, Cordoba, Argentina
-- **Fundador**: Mirko Montani
-- **IA Asistente**: Sora Lella - Secretaria, asistenta, consejera, socia y psicologa motivadora
-
-## Caracteristicas Implementadas
-
-### Chat IA - Sora Lella
-- Interfaz tipo ChatGPT con personalidad italiana/argentina
-- Clasificacion automatica de complejidad (DeepSeek/OpenAI routing)
-- Deteccion automatica de acciones CRM desde la conversacion
-- Soporte markdown para respuestas ricas
-- Historial de conversaciones persistente
-- Quick-actions predefinidas
-
-### CRM Completo
-- **Dashboard**: Metricas clave del negocio en tiempo real
-- **Productos**: Catalogo con categorias, costos, precios y margenes
-- **Recetas**: Documentacion completa con ingredientes, instrucciones y costos
-- **Clientes**: Fichas de particulares, restaurantes y hoteles
-- **Pedidos**: Seguimiento de pedidos con estados
-- **Ofertas**: Creacion y gestion de promociones
-- **Ingredientes**: Inventario con proveedores y stock
-- **Notas**: Sistema de notas rapidas con prioridades
-- **Estudio de Precios**: Analisis de pricing y margenes
-- **Log de Actividad**: Registro automatico de todas las acciones
-
-### Integracion IA-CRM
-- Sora Lella detecta automaticamente cuando Mirko menciona:
-  - Un nuevo producto -> lo crea en el CRM
-  - Un nuevo cliente -> lo registra
-  - Una idea de oferta -> la documenta
-  - Una receta -> la guarda con ingredientes
-  - Un pedido -> lo registra
-  - Notas e ideas -> las archiva
+## Project Overview
+- **Name**: Peperoncino Pasta Lab
+- **AI**: Sora Lella - Asistente IA personal para Mirko Montani
+- **Version**: 2.0.0
+- **Goal**: CRM inteligente con IA conversacional, generación de imágenes, material publicitario y análisis de documentos
 
 ## URLs
+- **Production**: https://peperoncino-pasta-lab.pages.dev
+- **GitHub**: https://github.com/Samuelwoody/Peperoncino-
+- **Sandbox**: https://3000-iagd6r0752r1kkif5nj42-cbeee0f9.sandbox.novita.ai
 
-### Desarrollo (Sandbox)
-- **App**: https://3000-iagd6r0752r1kkif5nj42-cbeee0f9.sandbox.novita.ai
-- **Health**: /api/health
-- **Settings**: /api/settings
+## Features Implementadas (v2.0)
 
-### API Endpoints
-| Metodo | Ruta | Descripcion |
-|--------|------|-------------|
-| GET | /api/health | Estado del servicio |
-| GET | /api/settings | Config de IA |
-| POST | /api/test-ai | Test conexion IA |
-| GET | /api/search?q= | Busqueda global |
-| GET | /api/chat/conversations | Listar conversaciones |
-| POST | /api/chat/conversations | Nueva conversacion |
-| DELETE | /api/chat/conversations/:id | Eliminar conversacion |
-| GET | /api/chat/conversations/:id/messages | Mensajes de conversacion |
-| POST | /api/chat/send | Enviar mensaje a Sora Lella |
-| GET | /api/crm/dashboard | Metricas del dashboard |
-| GET/POST | /api/crm/products | CRUD Productos |
-| GET/POST | /api/crm/recipes | CRUD Recetas |
-| GET/POST | /api/crm/clients | CRUD Clientes |
-| GET/POST | /api/crm/orders | CRUD Pedidos |
-| GET/POST | /api/crm/offers | CRUD Ofertas |
-| GET/POST | /api/crm/ingredients | CRUD Ingredientes |
-| GET/POST | /api/crm/notes | CRUD Notas |
-| GET/POST | /api/crm/pricing | Estudios de precios |
-| GET | /api/crm/activity | Log de actividad |
+### Chat IA Multi-Modelo
+- **DeepSeek** (`deepseek-chat`): Conversaciones simples, clasificación automática
+- **GPT-4o**: Tareas complejas, análisis visual (Vision), generación de material publicitario
+- **GPT-4o-mini**: Análisis de documentos, optimización de prompts
+- **DALL-E 3**: Generación de imágenes profesionales estilo trattoria italiana
+- Routing inteligente: la IA elige automáticamente el modelo según la complejidad
 
-## Arquitectura de Datos
+### Upload de Imágenes y Documentos
+- Botón de clip (📎) para adjuntar archivos
+- Drag & drop directamente en el chat
+- Soporte: imágenes (JPG, PNG, GIF), documentos (PDF, TXT, CSV, DOC)
+- Preview de adjuntos antes de enviar
+- Límite: 10MB por archivo
 
-### Base de Datos: Cloudflare D1 (SQLite)
-- **categories**: Categorias de productos
-- **products**: Catalogo de productos con costos y precios
-- **ingredients**: Ingredientes con stock y proveedores
-- **recipes**: Recetas con instrucciones detalladas
-- **recipe_ingredients**: Ingredientes por receta
-- **clients**: Base de clientes (particulares, restaurantes, hoteles)
-- **orders**: Pedidos con estados
-- **order_items**: Items de cada pedido
-- **offers**: Ofertas y promociones
-- **offer_products**: Productos en ofertas
-- **pricing_studies**: Analisis de precios
-- **conversations**: Conversaciones con Sora Lella
-- **messages**: Mensajes individuales
-- **activity_log**: Registro de actividad
-- **notes**: Notas rapidas
+### Análisis Visual (Vision API)
+- GPT-4o analiza fotos de platos, productos, etiquetas
+- Extrae datos de facturas, recibos, tickets
+- Compara con competencia
+- Sugiere mejoras de presentación
 
-### Modelos IA
-- **gpt-5-nano**: Clasificacion de mensajes y conversaciones simples
-- **gpt-5-mini**: Tareas complejas (analisis, estrategia, marketing)
+### Generación de Imágenes
+- DALL-E 3 con prompts optimizados para estilo trattoria italiana
+- Paleta Peperoncino (terracota, verde oliva, crema, rojo profundo)
+- Descarga directa de imágenes generadas
 
-## Guia de Uso
+### Material Publicitario
+- **Menús** personalizados para restaurantes (HTML, estilo trattoria)
+- **Tarjetas de plato estrella** para insertar en cartas
+- **Posts para Instagram/Facebook** con hashtags
+- **Flyers** para WhatsApp y para imprimir
+- **Etiquetas de producto** con branding
+- **Banners** para ferias y eventos
+- **Tarjetas de presentación** del negocio
+- **Infografías** y **Catálogos** de precios
+- Vista previa y descarga HTML
 
-### Chat con Sora Lella
-1. Click en "Nueva conversacion" o usa las quick-actions
-2. Escribi naturalmente - Sora Lella entiende contexto
-3. Si mencionas productos, clientes, etc. ella los registra automaticamente
-4. Podes pedir analisis de precios, ideas de marketing, motivacion, etc.
+### Galería de Material
+- Tab "Media" en el sidebar
+- Filtros por tipo: Menús, Tarjetas plato, Flyers, Posts redes, Imágenes
+- Vista previa, descarga y eliminación
+- Historial de todo el material generado
 
-### Gestion CRM
-1. Click en "CRM" en el sidebar
-2. Navega entre las secciones (Dashboard, Productos, Recetas, etc.)
-3. Usa los botones "Nuevo" para crear registros
-4. Todo se sincroniza con el chat de Sora Lella
+### CRM Completo
+- **Dashboard**: Resumen de productos, clientes, pedidos, ingresos, ofertas
+- **Productos**: 8 productos pre-cargados con costos, precios, márgenes
+- **Recetas**: Documentación de recetas con ingredientes, instrucciones, tips
+- **Clientes**: 3 clientes de ejemplo (restaurante, particular, hotel)
+- **Pedidos**: Tracking de pedidos con estados
+- **Ofertas**: Gestión de promociones con fechas y públicos
+- **Ingredientes**: 12 ingredientes con stock y proveedores
+- **Notas**: Sistema de notas con categorías y prioridades
+- **Actividad**: Log automático de todas las acciones
 
-## Despliegue
+### Acciones CRM Automáticas
+Sora Lella detecta automáticamente cuando Mirko menciona:
+- Nuevo producto/cliente/receta/oferta/pedido → Lo crea en el CRM
+- Actualización de precios → Registra estudio de precios
+- Notas e ideas → Las guarda clasificadas
 
-### Plataforma: Cloudflare Pages
-- **Estado**: Activo (desarrollo local)
-- **Tech Stack**: Hono + TypeScript + TailwindCSS CDN + D1
-- **Ultima Actualizacion**: 2026-03-19
+## Data Architecture
+- **Database**: Cloudflare D1 (SQLite distribuido)
+- **Tables**: 16 (categories, products, ingredients, recipes, recipe_ingredients, clients, orders, order_items, offers, offer_products, pricing_studies, conversations, messages, activity_log, notes, media_gallery)
+- **Secrets**: DEEPSEEK_API_KEY, OPENAI_API_KEY, OPENAI_BASE_URL
 
-### Variables de Entorno Necesarias
-```
-OPENAI_API_KEY=tu-api-key
-OPENAI_BASE_URL=https://api.openai.com/v1
-```
+## Tech Stack
+- **Backend**: Hono (TypeScript) + Cloudflare Workers
+- **Frontend**: Tailwind CSS + Vanilla JS + marked.js
+- **AI**: DeepSeek API + OpenAI API (multi-model)
+- **Database**: Cloudflare D1
+- **Fonts**: Playfair Display, Inter, Crimson Text
+- **Deploy**: Cloudflare Pages
 
-### Comandos
-```bash
-npm run build          # Compilar
-npm run dev:sandbox    # Servidor local con D1
-npm run db:migrate:local  # Aplicar migraciones
-npm run db:seed        # Cargar datos de prueba
-npm run db:reset       # Resetear DB completa
-npm run deploy         # Desplegar a Cloudflare
-```
+## API Endpoints
 
-## Funcionalidades Pendientes
-- [ ] Autenticacion/login para Mirko
-- [ ] Generacion de imagenes para marketing
-- [ ] Exportacion de informes PDF
-- [ ] Integracion con WhatsApp Business
-- [ ] Sistema de recordatorios automaticos
-- [ ] Calculo automatico de costos en recetas
-- [ ] Graficos historicos de ventas
-- [ ] Backup automatico de datos
+### Chat
+- `GET /api/chat/conversations` — Lista conversaciones
+- `POST /api/chat/conversations` — Crear conversación
+- `GET /api/chat/conversations/:id/messages` — Mensajes de conversación
+- `POST /api/chat/send` — Enviar mensaje (con attachments opcionales)
+- `DELETE /api/chat/conversations/:id` — Eliminar conversación
+- `GET /api/chat/gallery` — Galería de material generado
+- `GET /api/chat/gallery/:id` — Detalle de item
+- `DELETE /api/chat/gallery/:id` — Eliminar item
 
-## Proximos Pasos Recomendados
-1. Configurar API key valida para OpenAI/DeepSeek
-2. Desplegar a produccion en Cloudflare Pages
-3. Agregar autenticacion basica
-4. Configurar dominio personalizado
-5. Empezar a cargar datos reales del negocio
+### CRM
+- `GET /api/crm/dashboard` — Dashboard resumen
+- `GET/POST /api/crm/products` — Productos
+- `GET/POST /api/crm/recipes` — Recetas
+- `GET/POST /api/crm/clients` — Clientes
+- `GET/POST /api/crm/orders` — Pedidos
+- `GET/POST /api/crm/offers` — Ofertas
+- `GET/POST /api/crm/ingredients` — Ingredientes
+- `GET/POST /api/crm/notes` — Notas
+
+### General
+- `GET /api/health` — Health check
+- `GET /api/settings` — Estado de configuración IA
+- `POST /api/test-ai` — Test conexiones IA
+- `GET /api/search?q=` — Búsqueda global
+
+## Deployment
+- **Platform**: Cloudflare Pages
+- **Status**: ✅ Active
+- **Version**: 2.0.0
+- **Last Updated**: 2026-03-19
+
+## Nota sobre Real-Time
+Cloudflare Workers no soporta WebSocket servers persistentes. La Realtime API de OpenAI requiere WebSocket bidireccional con audio streaming, lo cual no es factible en serverless. En su lugar, se implementaron indicadores de estado en tiempo real y respuestas completas optimizadas para velocidad.
+
+## Próximos Pasos Posibles
+- Streaming de respuestas con Server-Sent Events
+- Edición de imágenes con DALL-E 3 (variaciones, inpainting)
+- Template gallery con diseños predeterminados
+- WhatsApp integration para enviar material directo
+- Exportación a PDF desde el material HTML
+- Notificaciones de stock bajo
+- Reportes automáticos semanales/mensuales
